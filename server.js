@@ -1,51 +1,51 @@
-const express = require("express");
-const { createProxyMiddleware } = require("http-proxy-middleware");
-const http = require("http");
-const WebSocket = require("ws");
+import express from "express";
+import { createServer } from "http";
+import { WebSocketServer } from "ws";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const server = createServer(app);
 
-// Serve static frontend (index.html)
-app.use(express.static("public"));
+// Serve static files (index.html, styles, etc.)
+app.use(express.static(path.join(__dirname, "public")));
 
-// Proxy TataPlay links to bypass CORS
-app.use(
-  "/stream",
-  createProxyMiddleware({
-    target: "https://tataplay.slivcdn.com",
-    changeOrigin: true,
-    pathRewrite: {
-      "^/stream": "/hls/live/2020591/TEN3HD", // rewrite proxy path
-    },
-  })
-);
-
-// Live connected users
-let viewers = 0;
+// WebSocket server
+const wss = new WebSocketServer({ server });
+let viewerCount = 0;
 
 wss.on("connection", (ws) => {
-  viewers++;
-  broadcastViewers();
+  viewerCount++;
+  console.log("New client connected. Viewers:", viewerCount);
+
+  // Send updated count to all clients
+  broadcast({ type: "viewerCount", count: viewerCount });
 
   ws.on("close", () => {
-    viewers--;
-    broadcastViewers();
+    viewerCount--;
+    console.log("Client disconnected. Viewers:", viewerCount);
+    broadcast({ type: "viewerCount", count: viewerCount });
   });
 });
 
-// Function to send viewers count to all clients
-function broadcastViewers() {
+// Broadcast helper
+function broadcast(data) {
   wss.clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify({ viewers }));
+    if (client.readyState === 1) {
+      client.send(JSON.stringify(data));
     }
   });
 }
 
-// Start server
-const PORT = 3000;
+// Fallback route
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`✅ Server running at http://localhost:${PORT}`);
+  console.log(`✅ Server running on http://localhost:${PORT}`);
 });
