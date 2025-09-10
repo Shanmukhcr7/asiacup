@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Asia Cup Live - Hindi</title>
+</head>
+<body style="background:#000; color:#fff; text-align:center; font-family:sans-serif;">
+
+  <h1>🏏 Asia Cup Live (Hindi)</h1>
+  <p id="viewerCount">Viewers Online: 0</p>
+
+  <video id="video" controls autoplay width="800" style="max-width:90%; border:3px solid #fff; border-radius:10px;"></video>
+
+  <br><br>
+  <button onclick="changeQuality('master_664.m3u8')">360p</button>
+  <button onclick="changeQuality('master_900.m3u8')">480p</button>
+  <button onclick="changeQuality('master_2000.m3u8')">720p</button>
+  <button onclick="changeQuality('master_3500.m3u8')">1080p</button>
+
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script>
+    const video = document.getElementById("video");
+    let hls;
+
+    function playStream(source) {
+      if (Hls.isSupported()) {
+        if (hls) hls.destroy(); // cleanup previous instance
+        hls = new Hls();
+        hls.loadSource(`/stream/${source}`);
+        hls.attachMedia(video);
+      } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+        video.src = `/stream/${source}`;
+      }
+    }
+
+    // Default quality 720p
+    playStream("master_2000.m3u8");
+
+    function changeQuality(source) {
+      playStream(source);
+    }
+
+    // WebSocket connection for viewer count
+    const ws = new WebSocket(`ws://${window.location.host}`);
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.viewers !== undefined) {
+        document.getElementById("viewerCount").innerText = `Viewers Online: ${data.viewers}`;
+      }
+    };
+  </script>
+</body>
+</html>
