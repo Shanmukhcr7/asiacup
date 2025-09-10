@@ -41,15 +41,12 @@
       playStream(source);
     }
 
-    // ✅ WebSocket connection for viewer count
-    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-    const ws = new WebSocket(`${protocol}://${window.location.host}`);
-
+    // WebSocket connection for viewer count
+    const ws = new WebSocket(`ws://${window.location.host}`);
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.viewers !== undefined) {
-        document.getElementById("viewerCount").innerText =
-          `Viewers Online: ${data.viewers}`;
+        document.getElementById("viewerCount").innerText = `Viewers Online: ${data.viewers}`;
       }
     };
   </script>
