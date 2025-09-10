@@ -20,35 +20,37 @@
 
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <script>
-    const video = document.getElementById("video");
-    let hls;
+  const video = document.getElementById("video");
+  let hls;
 
-    function playStream(source) {
-      if (Hls.isSupported()) {
-        if (hls) hls.destroy(); // cleanup previous instance
-        hls = new Hls();
-        hls.loadSource(`/stream/${source}`);
-        hls.attachMedia(video);
-      } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-        video.src = `/stream/${source}`;
-      }
+  function playStream(source) {
+    if (Hls.isSupported()) {
+      if (hls) hls.destroy(); // cleanup previous instance
+      hls = new Hls();
+      hls.loadSource(`/stream/${source}`);
+      hls.attachMedia(video);
+    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = `/stream/${source}`;
     }
+  }
 
-    // Default quality 720p
-    playStream("master_2000.m3u8");
+  // Default quality 720p
+  playStream("master_2000.m3u8");
 
-    function changeQuality(source) {
-      playStream(source);
+  function changeQuality(source) {
+    playStream(source);
+  }
+
+  // ✅ WebSocket connection for viewer count (works on both local & Render)
+  const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+  const ws = new WebSocket(`${protocol}://${window.location.host}`);
+
+  ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    if (data.viewers !== undefined) {
+      document.getElementById("viewerCount").innerText = `Viewers Online: ${data.viewers}`;
     }
-
-    // WebSocket connection for viewer count
-    const ws = new WebSocket(`ws://${window.location.host}`);
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.viewers !== undefined) {
-        document.getElementById("viewerCount").innerText = `Viewers Online: ${data.viewers}`;
-      }
-    };
-  </script>
+  };
+</script>
 </body>
 </html>
