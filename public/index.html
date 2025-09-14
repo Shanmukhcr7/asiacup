@@ -1,56 +1,221 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Asia Cup Live - Hindi</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Asia Cup Live - Hindi</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .modal-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #1a1a1a;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            color: #fff;
+            text-align: center;
+        }
+    </style>
 </head>
-<body style="background:#000; color:#fff; text-align:center; font-family:sans-serif;">
+<body class="bg-gray-900 text-white flex flex-col items-center p-4 min-h-screen">
 
-  <h1>🏏 Asia Cup Live (Hindi)</h1>
-  <p id="viewerCount">Viewers Online: 0</p>
+    <!-- Modal for messages -->
+    <div id="message-modal" class="modal-container hidden">
+        <div class="modal-content">
+            <p id="modal-text" class="text-lg mb-4"></p>
+            <button onclick="closeModal()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200">
+                Close
+            </button>
+        </div>
+    </div>
 
-  <video id="video" controls autoplay width="800" style="max-width:90%; border:3px solid #fff; border-radius:10px;"></video>
+    <div class="w-full max-w-4xl p-6 bg-gray-800 rounded-2xl shadow-lg mt-8 mb-4">
+        <h1 class="text-3xl sm:text-4xl font-bold mb-2">🏏 Asia Cup Live (Hindi)</h1>
+        <p id="viewerCount" class="text-gray-400 mb-6">Viewers Online: 0</p>
+        
+        <div class="relative w-full aspect-video rounded-xl overflow-hidden mb-6">
+            <video id="video" class="w-full h-full object-contain bg-black" controls autoplay></video>
+            <div id="live-indicator" class="absolute bottom-2 left-2 flex items-center bg-red-600 text-white text-xs font-semibold px-2 py-1 rounded-full opacity-0 transition-opacity duration-300">
+                <span class="relative flex h-2 w-2 mr-1">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                </span>
+                LIVE
+            </div>
+        </div>
 
-  <br><br>
-  <button onclick="changeQuality('master_664.m3u8')">360p</button>
-  <button onclick="changeQuality('master_900.m3u8')">480p</button>
-  <button onclick="changeQuality('master_2000.m3u8')">720p</button>
-  <button onclick="changeQuality('master_3500.m3u8')">1080p</button>
+        <div class="flex flex-col sm:flex-row justify-center items-center gap-3 mb-6">
+            <button onclick="changeQuality('master_664.m3u8')" class="quality-btn bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-xl transition-colors duration-200">360p</button>
+            <button onclick="changeQuality('master_900.m3u8')" class="quality-btn bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-xl transition-colors duration-200">480p</button>
+            <button onclick="changeQuality('master_2000.m3u8')" class="quality-btn active bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-xl transition-colors duration-200">720p</button>
+            <button onclick="changeQuality('master_3500.m3u8')" class="quality-btn bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-xl transition-colors duration-200">1080p</button>
+        </div>
+        
+        <div class="flex flex-col sm:flex-row justify-between items-center bg-gray-700 p-4 rounded-xl">
+            <p id="time-display" class="text-sm font-medium text-gray-400 mb-2 sm:mb-0">Live time: --:--:--</p>
+            <button id="go-live-btn" onclick="goToLive()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200">
+                Go Live
+            </button>
+        </div>
+    </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-  <script>
-  const video = document.getElementById("video");
-  let hls;
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script>
+        const video = document.getElementById("video");
+        const viewerCountElement = document.getElementById("viewerCount");
+        const timeDisplayElement = document.getElementById("time-display");
+        const goLiveButton = document.getElementById("go-live-btn");
+        const liveIndicator = document.getElementById("live-indicator");
+        const modal = document.getElementById("message-modal");
+        const modalText = document.getElementById("modal-text");
+        let hls;
+        let isLive = false;
 
-  function playStream(source) {
-    if (Hls.isSupported()) {
-      if (hls) hls.destroy(); // cleanup previous instance
-      hls = new Hls();
-      hls.loadSource(`/stream/${source}`);
-      hls.attachMedia(video);
-    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      video.src = `/stream/${source}`;
-    }
-  }
+        function showModal(message) {
+            modalText.innerText = message;
+            modal.classList.remove('hidden');
+        }
 
-  // Default quality 720p
-  playStream("master_2000.m3u8");
+        function closeModal() {
+            modal.classList.add('hidden');
+        }
 
-  function changeQuality(source) {
-    playStream(source);
-  }
+        function updateTimeDisplay(currentTime) {
+            const date = new Date(currentTime * 1000);
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+            timeDisplayElement.innerText = `Live time: ${hours}:${minutes}:${seconds}`;
+        }
+        
+        function updateLiveStatus() {
+            // A simple check to see if we are near the live edge.
+            const liveThreshold = 10; // seconds
+            if (video.duration - video.currentTime < liveThreshold) {
+                if (!isLive) {
+                    liveIndicator.classList.remove('opacity-0');
+                    goLiveButton.classList.add('hidden');
+                    isLive = true;
+                }
+            } else {
+                if (isLive) {
+                    liveIndicator.classList.add('opacity-0');
+                    goLiveButton.classList.remove('hidden');
+                    isLive = false;
+                }
+            }
+        }
 
-  // ✅ WebSocket connection for viewer count (works on both local & Render)
-  const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-  const ws = new WebSocket(`${protocol}://${window.location.host}`);
+        function playStream(source) {
+            if (hls) {
+                hls.destroy();
+            }
 
-  ws.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    if (data.viewers !== undefined) {
-      document.getElementById("viewerCount").innerText = `Viewers Online: ${data.viewers}`;
-    }
-  };
-</script>
+            if (Hls.isSupported()) {
+                hls = new Hls();
+                hls.loadSource(`/stream/${source}`);
+                hls.attachMedia(video);
+
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    video.play();
+                });
+                
+                // Event listener to check if we are at the live edge
+                hls.on(Hls.Events.FRAG_LOADED, function(event, data) {
+                    if (data.frag.type === 'live') {
+                        updateTimeDisplay(Date.now() / 1000);
+                        updateLiveStatus();
+                    }
+                });
+
+                hls.on(Hls.Events.ERROR, function (event, data) {
+                    if (data.fatal) {
+                        switch(data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                showModal("Network error occurred, trying to reconnect...");
+                                hls.startLoad();
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                showModal("Media error occurred, trying to recover...");
+                                hls.recoverMediaError();
+                                break;
+                            default:
+                                showModal(`A fatal error occurred. Please refresh the page.`);
+                                console.error('Fatal Hls.js error:', data.details);
+                                hls.destroy();
+                                break;
+                        }
+                    }
+                });
+
+            } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+                video.src = `/stream/${source}`;
+                video.addEventListener('loadedmetadata', () => video.play());
+            } else {
+                showModal("Your browser does not support this video format.");
+            }
+        }
+
+        function goToLive() {
+            if (hls) {
+                hls.currentLevel = -1; // -1 means auto-level selection
+                hls.startLoad();
+            }
+            if (video) {
+                video.currentTime = video.duration;
+            }
+            updateLiveStatus();
+        }
+
+        function changeQuality(source) {
+            document.querySelectorAll('.quality-btn').forEach(btn => btn.classList.remove('active', 'bg-blue-600', 'hover:bg-blue-500'));
+            const clickedBtn = document.querySelector(`[onclick="changeQuality('${source}')"]`);
+            if (clickedBtn) {
+                clickedBtn.classList.add('active', 'bg-blue-600', 'hover:bg-blue-500');
+            }
+            playStream(source);
+        }
+
+        // Default quality is 720p
+        changeQuality("master_2000.m3u8");
+
+        // WebSocket connection for viewer count
+        const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+        const ws = new WebSocket(`${protocol}://${window.location.host}`);
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.viewers !== undefined) {
+                viewerCountElement.innerText = `Viewers Online: ${data.viewers}`;
+            }
+        };
+
+        ws.onclose = () => {
+            console.log('WebSocket connection closed.');
+        };
+
+        ws.onerror = (error) => {
+            console.error('WebSocket error:', error);
+        };
+    </script>
 </body>
 </html>
