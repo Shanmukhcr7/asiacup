@@ -1,126 +1,191 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Asia Cup Live - Hindi</title>
+<meta charset="UTF-8">
+<title>Asia Cup Live - Hindi</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
+<!-- JW Player Library -->
+<script src="//content.jwplatform.com/libraries/SAHhwvZq.js"></script>
 
-  <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  body{background:#000;margin:0;padding:0;overflow:hidden;font-family:Poppins,sans-serif;color:#e0e0e0}
+  html,body{height:100%}
+  #jwplayerDiv{width:100%!important;height:100%!important}
 
-  <!-- Plyr CSS -->
-  <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css"/>
+  header{
+    position:fixed;top:0;left:0;right:0;height:70px;
+    background:rgba(10,10,10,0.85);
+    display:flex;align-items:center;justify-content:center;
+    z-index:9999;border-bottom:1px solid rgba(255,255,255,0.08);
+  }
+  header img{height:60%}
+  .menu-icon{position:absolute;left:16px;color:#fff;font-size:30px;cursor:pointer}
 
-  <style>
-    body { font-family: 'Inter', sans-serif; }
-    .video-container {
-      position: relative;
-      width: 100%;
-      padding-top: 56.25%; /* 16:9 ratio */
-      background: black;
-      overflow: hidden;
-      border-radius: 0.75rem;
-    }
-    .video-container video {
-      position: absolute;
-      top:0; left:0;
-      width:100%; height:100%;
-    }
-    .modal-container {
-      position: fixed; top: 0; left: 0;
-      width: 100%; height: 100%;
-      background-color: rgba(0, 0, 0, 0.7);
-      display: flex; justify-content: center; align-items: center;
-      z-index: 1000;
-    }
-    .modal-content {
-      background-color: #1a1a1a;
-      padding: 1.5rem;
-      border-radius: 10px;
-      color: #fff;
-      text-align: center;
-    }
-  </style>
+  /* Sidebar */
+  .sidebar{
+    position:fixed;top:0;left:-280px;width:280px;height:100%;
+    background:rgba(255,255,255,0.1);backdrop-filter:blur(20px);
+    z-index:10001;transition:left 0.4s;padding-top:80px;
+  }
+  .sidebar.open{left:0;}
+  .sidebar a{display:block;padding:15px 24px;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.1);}
+  .sidebar a:hover{background:rgba(255,255,255,0.15);}
+
+  .overlay{
+    position:fixed;top:0;left:0;width:100%;height:100%;
+    background:rgba(0,0,0,0.5);z-index:10000;display:none;
+  }
+  .overlay.show{display:block;}
+
+  /* Tabs */
+  .tabs{display:flex;justify-content:space-around;margin:80px auto 0;max-width:960px;}
+  .tab-button{flex:1;padding:12px;color:#b0b0b0;cursor:pointer;text-align:center;border:none;background:#111;font-weight:500;position:relative;}
+  .tab-button.active{color:#1db954;font-weight:600;}
+  .tab-content{display:none;max-width:960px;margin:20px auto;}
+  .tab-content.active{display:block;}
+  .tab-content iframe{width:100%;height:600px;border:0;}
+
+  /* Popup */
+  .modal{position:fixed;top:0;left:0;width:100vw;height:100vh;backdrop-filter:blur(6px);background:rgb(0 0 0/.4);display:flex;justify-content:center;align-items:center;z-index:9999}
+  .modal-content{background:rgb(255 255 255/.05);border:1px solid rgb(255 255 255/.1);border-radius:20px;padding:30px 25px;width:90%;max-width:400px;text-align:center;color:#f3f4f6;box-shadow:0 8px 32px rgb(0 0 0/.4);backdrop-filter:blur(12px)}
+  .modal-content h2{font-size:24px;font-weight:700;color:#facc15;margin-bottom:16px}
+  .modal-content p{font-size:16px;color:#d1d5db;margin-bottom:24px;line-height:1.5}
+  .modal-content button{width:100%;padding:12px;font-size:16px;border:none;border-radius:12px;margin-bottom:12px;cursor:pointer;transition:.3s}
+  #joinButton{background:linear-gradient(to right,#3b82f6,#06b6d4);color:#fff;font-weight:500}
+  #joinButton:hover{background:linear-gradient(to right,#2563eb,#0891b2);transform:scale(1.02)}
+  #closeButton{background:rgb(255 255 255/.1);color:#f3f4f6}
+  #closeButton:hover{background:rgb(255 255 255/.15);transform:scale(1.02)}
+
+  /* Telegram Banner */
+  .tg-banner{position:absolute;top:16px;left:16px;background:linear-gradient(135deg,rgba(29,161,242,.85),rgba(0,119,181,.85));backdrop-filter:blur(8px);border-radius:12px;padding:10px 16px;display:flex;align-items:center;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:1000}
+  .tg-banner img{width:28px;height:28px;margin-right:10px;border-radius:50%;border:2px solid rgba(255,255,255,.8)}
+  .tg-banner span{font-size:15px;font-weight:600;letter-spacing:.4px}
+
+  /* Error Banner */
+  #errorBanner{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;background:rgba(255,0,0,.7);padding:20px;border-radius:10px;text-align:center;z-index:10000}
+</style>
 </head>
-<body class="bg-gray-900 text-white flex flex-col items-center p-4 min-h-screen">
+<body>
 
-  <!-- Modal -->
-  <div id="message-modal" class="modal-container hidden">
-    <div class="modal-content">
-      <p id="modal-text" class="text-lg mb-4"></p>
-      <button onclick="closeModal()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200">
-        Close
-      </button>
-    </div>
+<header>
+  <span class="material-icons menu-icon" onclick="toggleSidebar()">menu</span>
+  <img src="https://i.ibb.co/4gZK8LNr/Picsart-25-07-19-12-43-47-571.png" alt="Logo">
+</header>
+
+<!-- JW Player Container -->
+<div class="video-container" style="margin-top:90px;height:500px;max-width:960px;margin-left:auto;margin-right:auto;">
+  <div id="jwplayerDiv"></div>
+</div>
+
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+  <a href="https://t.me/+-mTqb9qmX7Q2ODdl" target="_blank">Join Telegram</a>
+  <a href="https://t.me/+-mTqb9qmX7Q2ODdl" target="_blank">Contact Us</a>
+  <a href="#" onclick="alert('Visitor Count Coming Soon')">Visitor Count</a>
+</div>
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <button class="tab-button active" onclick="switchTab('chat')">Chat</button>
+  <button class="tab-button" onclick="switchTab('scoreboard')">Scoreboard</button>
+  <button class="tab-button" onclick="switchTab('highlights')">Highlights</button>
+</div>
+
+
+
+<!-- Telegram Popup -->
+<div id="telegramPopup" class="modal">
+  <div class="modal-content">
+    <h2>Join Our Telegram!</h2>
+    <p>Get instant updates on all live matches and exclusive content by joining our Telegram channel <strong>@LIVE LINKS</strong></p>
+    <button id="joinButton" onclick="window.open('https://t.me/+-mTqb9qmX7Q2ODdl','_blank')">Join Now</button>
+    <button id="closeButton">Continue Watching</button>
   </div>
+</div>
 
-  <div class="w-full max-w-4xl p-6 bg-gray-800 rounded-2xl shadow-lg mt-8 mb-4">
-    <h1 class="text-3xl sm:text-4xl font-bold mb-2">🏏 Asia Cup Live (Hindi)</h1>
-    <p id="viewerCount" class="text-gray-400 mb-6">Viewers Online: 0</p>
-    
-    <!-- Video Player -->
-    <div class="video-container mb-6">
-      <video id="player" playsinline controls></video>
-    </div>
+<!-- Error Banner -->
+<div id="errorBanner"></div>
 
-    <div class="flex flex-col sm:flex-row justify-between items-center bg-gray-700 p-4 rounded-xl">
-      <p id="time-display" class="text-sm font-medium text-gray-400 mb-2 sm:mb-0">Live time: --:--:--</p>
-    </div>
-  </div>
+<script>
+  const TELEGRAM_LINK = "https://t.me/+-mTqb9qmX7Q2ODdl";
+  let failCount = 0;
+  let cropModes = ["uniform", "fill", "exactfit", "none"];
+  let currentCrop = 0;
 
-  <!-- Plyr + Hls.js -->
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-  <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+  async function fetchStreamConfig() {
+    try {
+      let res = await fetch("https://raw.githubusercontent.com/valverdeaegithu/pl/refs/heads/main/44willow.json", {cache:"no-store"});
+      if (!res.ok) throw new Error("Config fetch failed");
+      return await res.json();
+    } catch(err) { handleFailure("Config fetch error"); }
+  }
 
-  <script>
-    function closeModal(){
-      document.getElementById('message-modal').classList.add('hidden');
-    }
+  function handleFailure(msg){
+    failCount++;
+    document.getElementById("errorBanner").innerText = msg + (failCount<3?" Retrying...":"");
+    document.getElementById("errorBanner").style.display = "block";
+    if(failCount>=3) window.location.href = TELEGRAM_LINK;
+    else setTimeout(init,1000);
+  }
 
-    // Replace with your JSON source that has the stream URL
-    const jsonUrl = 'https://raw.githubusercontent.com/StmpupCricket/Star-Sports-Hindi-json/refs/heads/main/data.json';
+  async function init(){
+    try {
+      const config = await fetchStreamConfig();
+      if(config){
+        const dashUrl = config.source.url;
+        const keyInfo = config.drm.clearkey.keys[0];
 
-    async function initPlayer() {
-      try {
-        const res = await fetch(jsonUrl);
-        const data = await res.json();
-        const m3u8Url = data.stream_url; // stream_url inside JSON
-
-        const video = document.getElementById('player');
-
-        if (Hls.isSupported()) {
-          const hls = new Hls();
-          hls.loadSource(m3u8Url);
-          hls.attachMedia(video);
-          hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            new Plyr(video);
-          });
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-          video.src = m3u8Url;
-          video.addEventListener('loadedmetadata', () => {
-            new Plyr(video);
-          });
-        } else {
-          showError("Your browser doesn't support HLS streaming.");
-        }
-      } catch (err) {
-        console.error(err);
-        showError("Failed to load the live stream.");
+        jwplayer("jwplayerDiv").setup({
+          file: dashUrl,
+          autostart:true,
+          mute:true,
+          stretching: cropModes[currentCrop],
+          width:"100%",
+          height:"100%",
+          type:"dash",
+          drm:{clearkey:{keyId:keyInfo.keyId,key:keyInfo.key}},
+          controls:true,
+          skin:{name:"seven"}
+        }).on("ready",()=>{
+          document.getElementById("errorBanner").style.display="none";
+          jwplayer("jwplayerDiv").addButton(
+            "https://i.postimg.cc/HxwwrjnX/ratio.webp",
+            "Change Aspect Ratio",
+            ()=>{
+              currentCrop=(currentCrop+1)%cropModes.length;
+              jwplayer("jwplayerDiv").setConfig({stretching:cropModes[currentCrop]});
+            },"crop"
+          );
+        }).on("error",()=>handleFailure("Stream error"));
       }
-    }
+    } catch(err){ handleFailure("Unexpected error"); }
+  }
 
-    function showError(msg) {
-      document.getElementById('modal-text').innerText = msg;
-      document.getElementById('message-modal').classList.remove('hidden');
-    }
+  // Popup logic
+  document.addEventListener("DOMContentLoaded",()=>{
+    document.getElementById("closeButton").addEventListener("click",()=>{
+      document.getElementById("telegramPopup").style.display="none";
+      init();
+    });
+  });
 
-    // Initialize
-    initPlayer();
-  </script>
+  // Sidebar toggle
+  function toggleSidebar(){
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('overlay').classList.toggle('show');
+  }
+
+  // Tabs
+  function switchTab(tabId){
+    document.querySelectorAll('.tab-button').forEach(btn=>btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    if(tabId==='chat') document.querySelector('.tab-button:nth-child(1)').classList.add('active');
+    if(tabId==='scoreboard') document.querySelector('.tab-button:nth-child(2)').classList.add('active');
+    if(tabId==='highlights') document.querySelector('.tab-button:nth-child(3)').classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+  }
+</script>
 </body>
 </html>
