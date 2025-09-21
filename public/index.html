@@ -4,28 +4,32 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Asia Cup Live - Hindi</title>
+
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Plyr CSS -->
+  <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css"/>
+
   <style>
     body { font-family: 'Inter', sans-serif; }
-    .iframe-container {
+    .video-container {
       position: relative;
       width: 100%;
-      /* maintain aspect ratio 16:9 */
-      padding-top: 56.25%; 
+      padding-top: 56.25%; /* 16:9 ratio */
       background: black;
       overflow: hidden;
-      border-radius: 0.75rem; /* rounded corners */
+      border-radius: 0.75rem;
     }
-    .iframe-container iframe {
+    .video-container video {
       position: absolute;
       top:0; left:0;
       width:100%; height:100%;
-      border:0;
     }
     .modal-container {
       position: fixed; top: 0; left: 0;
@@ -45,7 +49,7 @@
 </head>
 <body class="bg-gray-900 text-white flex flex-col items-center p-4 min-h-screen">
 
-  <!-- Modal for error messages etc -->
+  <!-- Modal -->
   <div id="message-modal" class="modal-container hidden">
     <div class="modal-content">
       <p id="modal-text" class="text-lg mb-4"></p>
@@ -59,9 +63,9 @@
     <h1 class="text-3xl sm:text-4xl font-bold mb-2">🏏 Asia Cup Live (Hindi)</h1>
     <p id="viewerCount" class="text-gray-400 mb-6">Viewers Online: 0</p>
     
-    <!-- Embed the site using iframe -->
-    <div class="iframe-container mb-6">
-      <iframe src="https://cricketstan.github.io/Channel-13/" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+    <!-- Video Player -->
+    <div class="video-container mb-6">
+      <video id="player" playsinline controls></video>
     </div>
 
     <div class="flex flex-col sm:flex-row justify-between items-center bg-gray-700 p-4 rounded-xl">
@@ -69,11 +73,54 @@
     </div>
   </div>
 
+  <!-- Plyr + Hls.js -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+
   <script>
     function closeModal(){
       document.getElementById('message-modal').classList.add('hidden');
     }
-    // You can put code here for viewer count, etc.
+
+    // Replace with your JSON source that has the stream URL
+    const jsonUrl = 'https://raw.githubusercontent.com/StmpupCricket/Star-Sports-Hindi-json/refs/heads/main/data.json';
+
+    async function initPlayer() {
+      try {
+        const res = await fetch(jsonUrl);
+        const data = await res.json();
+        const m3u8Url = data.stream_url; // stream_url inside JSON
+
+        const video = document.getElementById('player');
+
+        if (Hls.isSupported()) {
+          const hls = new Hls();
+          hls.loadSource(m3u8Url);
+          hls.attachMedia(video);
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            new Plyr(video);
+          });
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+          video.src = m3u8Url;
+          video.addEventListener('loadedmetadata', () => {
+            new Plyr(video);
+          });
+        } else {
+          showError("Your browser doesn't support HLS streaming.");
+        }
+      } catch (err) {
+        console.error(err);
+        showError("Failed to load the live stream.");
+      }
+    }
+
+    function showError(msg) {
+      document.getElementById('modal-text').innerText = msg;
+      document.getElementById('message-modal').classList.remove('hidden');
+    }
+
+    // Initialize
+    initPlayer();
   </script>
 </body>
 </html>
